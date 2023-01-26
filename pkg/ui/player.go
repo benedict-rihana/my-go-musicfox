@@ -251,27 +251,35 @@ func (p *Player) lyricView() string {
 	return lyricBuilder.String()
 }
 
+
 // songView 歌曲信息UI
 func (p *Player) songView() string {
 	var builder strings.Builder
+	var bgColor = SongViewBGColor(p)
+	var fgColor = DefaultFGBaseColor()
 
 	if p.model.menuStartColumn-4 > 0 {
 		builder.WriteString(strings.Repeat(" ", p.model.menuStartColumn-4))
-		builder.WriteString(SetFgStyle(fmt.Sprintf("[%s] ", player.ModeName(p.mode)), termenv.ANSIBrightMagenta))
+		// builder.WriteString(SetFgStyle("", bgColor))
+		builder.WriteString(SetFgBgStyle(
+			fmt.Sprintf("[%s] ", player.ModeName(p.mode)), 
+			fgColor,
+			bgColor,
+			))
 	}
-	builder.WriteString(SetFgStyle(fmt.Sprintf("%d%% ", p.Volume()), termenv.ANSIBrightBlue))
+	builder.WriteString(SetFgBgStyle(fmt.Sprintf("%d%% ", p.Volume()), fgColor, bgColor))
 	if p.State() == player.Playing {
-		builder.WriteString(SetFgStyle("♫ ♪ ♫ ♪  ", termenv.ANSIBrightYellow))
+		builder.WriteString(SetFgBgStyle("♫ ♪ ♫ ♪  ", fgColor, bgColor))
 	} else {
-		builder.WriteString(SetFgStyle("_ z Z Z  ", termenv.ANSIYellow))
+		builder.WriteString(SetFgBgStyle("_ z Z Z  ", fgColor, bgColor))
 	}
 
 	if p.curSongIndex < len(p.playlist) {
 		prefixLen := 22
 		// 按剩余长度截断字符串
 		truncateSong := runewidth.Truncate(p.curSong.Name, p.model.WindowWidth-p.model.menuStartColumn-prefixLen, "") // 多减，避免剩余1个中文字符
-		builder.WriteString(SetFgStyle(truncateSong, GetPrimaryColor()))
-		builder.WriteString(" ")
+		builder.WriteString(SetFgBgStyle(truncateSong, fgColor, bgColor))
+		builder.WriteString(SetFgBgStyle(" ",fgColor, bgColor))
 
 		var artists strings.Builder
 		for i, v := range p.curSong.Artists {
@@ -283,11 +291,11 @@ func (p *Player) songView() string {
 		}
 
 		// 按剩余长度截断字符串
-		remainLen := p.model.WindowWidth - p.model.menuStartColumn - prefixLen - runewidth.StringWidth(p.curSong.Name)
+		remainLen := p.model.WindowWidth + 4 - p.model.menuStartColumn - prefixLen - runewidth.StringWidth(p.curSong.Name)
 		truncateArtists := runewidth.Truncate(
 			runewidth.FillRight(artists.String(), remainLen),
-			remainLen, "")
-		builder.WriteString(SetFgStyle(truncateArtists, termenv.ANSIBrightBlack))
+			remainLen, " ")
+		builder.WriteString(SetFgBgStyle(truncateArtists, fgColor,bgColor))
 	}
 
 	return builder.String()

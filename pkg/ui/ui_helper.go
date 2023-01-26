@@ -204,3 +204,17 @@ func GetViewFromDjCate(categories []ds2.DjCategory) []MenuItem {
 
 	return menus
 }
+
+func SongViewBGColor(p *Player) termenv.Color{
+	switch p.mode{
+	case 2:return termenv.ColorProfile().Color("#a6e3a1") // 顺序
+	case 3:return termenv.ColorProfile().Color("#fab387") // 单曲 
+	case 4:return termenv.ColorProfile().Color("#cba6f7") // 随机
+	case 5:return termenv.ColorProfile().Color("#f38ba8") // 心动
+	default: return termenv.ColorProfile().Color("#89b4fa") // 列表
+	}
+}
+
+func DefaultFGBaseColor() termenv.Color {
+	return termenv.ColorProfile().Color("#1e1e1e")
+}

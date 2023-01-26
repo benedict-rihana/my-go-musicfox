@@ -30,6 +30,7 @@ const StartupCheckUpdate = true
 const AppLocalDataDir = ".go-musicfox"
 const AppDBName = "musicfox"
 const AppIniFile = "go-musicfox.ini"
+const AppThemeFile = "theme.ini"
 const AppPrimaryRandom = "random"
 const AppPrimaryColor = "#f90022"
 const AppHttpTimeout = time.Second * 5

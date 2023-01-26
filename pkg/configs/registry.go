@@ -21,7 +21,7 @@ type Registry struct {
 	StartupSignIn            bool          // 每天启动时自动签到
 	StartupCheckUpdate       bool          // 启动检查更新
 
-	ProgressFullChar  rune // 进度条已加载字符
+	ProgressFullChar  string // 进度条已加载字符
 	ProgressEmptyChar rune // 进度条未加载字符
 
 	MainShowTitle              bool                     // 主界面是否显示标题
@@ -61,7 +61,7 @@ func NewRegistryWithDefault() *Registry {
 		StartupSignIn:            constants.StartupSignIn,
 		StartupCheckUpdate:       constants.StartupCheckUpdate,
 
-		ProgressFullChar:  rune(constants.ProgressFullChar[0]),
+		ProgressFullChar:  constants.ProgressFullChar,
 		ProgressEmptyChar: rune(constants.ProgressEmptyChar[0]),
 
 		MainShowTitle:        constants.MainShowTitle,
@@ -104,9 +104,9 @@ func NewRegistryFromIniFile(filepath string) *Registry {
 
 	fullChar := ini.String("progress.fullChar", constants.ProgressFullChar)
 	if len(fullChar) > 0 {
-		registry.ProgressFullChar = rune(fullChar[0])
+		registry.ProgressFullChar = fullChar //rune(fullChar[0])
 	} else {
-		registry.ProgressFullChar = rune(constants.ProgressFullChar[0])
+		registry.ProgressFullChar = constants.ProgressFullChar
 	}
 	emptyChar := ini.String("progress.emptyChar", constants.ProgressEmptyChar)
 	if len(emptyChar) > 0 {

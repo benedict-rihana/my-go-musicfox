@@ -42,7 +42,7 @@ func (item *MenuItem) String() string {
 	if item.Subtitle == "" {
 		return item.Title
 	}
-	return item.Title + " " + SetFgStyle(item.Subtitle, termenv.ANSIBrightBlack)
+	return item.Title + " " + SetFgStyle(item.Subtitle, termenv.ANSIMagenta)
 }
 
 type MainUIModel struct {
@@ -265,7 +265,7 @@ func (main *MainUIModel) menuTitleView(m *NeteaseModel, top *int, menuTitle *Men
 	if m.menuTitleStartColumn > 0 {
 		menuTitleBuilder.WriteString(strings.Repeat(" ", m.menuTitleStartColumn))
 	}
-	menuTitleBuilder.WriteString(SetFgStyle(title, termenv.ANSIBrightGreen))
+	menuTitleBuilder.WriteString(SetFgStyle(title, termenv.ANSIBrightRed))
 
 	*top = m.menuTitleStartRow
 
