@@ -13,6 +13,7 @@ import (
 	"go-musicfox/utils"
 
 	"github.com/lucasb-eyer/go-colorful"
+	"github.com/mattn/go-runewidth"
 	"github.com/muesli/termenv"
 )
 
@@ -216,5 +217,43 @@ func SongViewBGColor(p *Player) termenv.Color{
 }
 
 func DefaultFGBaseColor() termenv.Color {
-	return termenv.ColorProfile().Color("#1e1e1e")
+	return configs.ThemeConfig.TextFG
+}
+
+
+func RenderBG(m *NeteaseModel, fromLine,toLine int) string{
+	var bgBuilder strings.Builder
+	for i := fromLine; i < toLine - 1; i++ {
+		bgBuilder.WriteString(strings.Repeat(SetFgBgStyle(" ", configs.ThemeConfig.AppBackground,configs.ThemeConfig.AppBackground),m.WindowWidth))
+		bgBuilder.WriteString("\n")
+	}
+	return bgBuilder.String()
+}
+
+func RenderContent(m *NeteaseModel, content string, beginColumn int, fgColor, bgColor termenv.Color) string{
+	content = strings.ReplaceAll(content,"\n","")
+	var contentBuilder strings.Builder
+	runeLength := runewidth.StringWidth(content)
+	rightBlanks := m.WindowWidth - beginColumn - runeLength // + (length - runeLength)
+	contentBuilder.WriteString(SetFgBgStyle(strings.Repeat(" ", beginColumn),bgColor,bgColor))
+	contentBuilder.WriteString(SetFgBgStyle(content,fgColor,bgColor))
+	if rightBlanks > 0 {
+		contentBuilder.WriteString(SetFgBgStyle(strings.Repeat(" ", rightBlanks),bgColor,bgColor))
+	}
+	contentBuilder.WriteString("\n")
+	return contentBuilder.String()
+}
+
+func MenuTitle(m *NeteaseModel) string{
+	return ""
+}
+
+
+func clearScr(m * NeteaseModel){
+	termenv.MoveCursor(0,0)
+	for i := 0; i < m.WindowHeight; i++ {
+	  fmt.Printf("%s",SetFgBgStyle(strings.Repeat(" ",m.WindowWidth), configs.ThemeConfig.AppBackground,configs.ThemeConfig.AppBackground))
+	  termenv.MoveCursor(i + 1,0)
+	}	
+	termenv.MoveCursor(0,0)
 }

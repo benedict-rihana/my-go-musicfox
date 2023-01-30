@@ -4,3 +4,5 @@ bin/
 dist/
 .release-env
 musicfox
+.vscode
+build.sh

@@ -126,7 +126,12 @@ func LoadIniConfig() {
 	if _, err := os.Stat(configFile); os.IsNotExist(err) {
 		_ = CopyFileFromEmbed("embed/go-musicfox.ini", configFile)
 	}
+	themeFile := path.Join(projectDir, constants.AppThemeFile)
+	if _, err := os.Stat(themeFile); os.IsNotExist(err) {
+		_ = CopyFileFromEmbed("embed/theme.ini", themeFile)
+	}
 	configs.ConfigRegistry = configs.NewRegistryFromIniFile(configFile)
+	configs.ThemeConfig = configs.InitThemeConfig(themeFile)
 }
 
 // CheckUpdate 检查更新

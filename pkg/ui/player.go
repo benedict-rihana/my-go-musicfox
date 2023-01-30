@@ -66,14 +66,16 @@ type Player struct {
 	curSong          structs.Song   // 当前歌曲信息（防止播放列表发生变动后，歌曲信息不匹配）
 	playingMenuKey   string         // 正在播放的菜单Key
 	playingMenu      IMenu
+	playStatusBarRow int
 
 	lrcTimer      *lyric.LRCTimer // 歌词计时器
 	lyrics        [5]string       // 歌词信息，保留5行
 	showLyric     bool            // 显示歌词
 	lyricStartRow int             // 歌词开始行
 	lyricLines    int             // 歌词显示行数，3或5
-
+	lyricEndRow int
 	// 播放进度条
+	progressBarRow int
 	progressLastWidth float64
 	progressRamp      []string
 
@@ -180,72 +182,30 @@ func (p *Player) playerView(top *int) string {
 	var playerBuilder strings.Builder
 
 	playerBuilder.WriteString(p.lyricView())
-
+	playerBuilder.WriteString(RenderBG(p.model,p.playStatusBarRow,p.playStatusBarRow + 2))
 	playerBuilder.WriteString(p.songView())
-	playerBuilder.WriteString("\n\n")
-
+	playerBuilder.WriteString(RenderBG(p.model,p.playStatusBarRow,p.playStatusBarRow + 2))
 	playerBuilder.WriteString(p.progressView())
-
-	*top = p.model.WindowHeight
 
 	return playerBuilder.String()
 }
 
 // lyricView 歌词显示UI
 func (p *Player) lyricView() string {
-	endRow := p.model.WindowHeight - 4
 
 	if !p.showLyric {
-		if endRow-p.model.menuBottomRow > 0 {
-			return strings.Repeat("\n", endRow-p.model.menuBottomRow)
-		} else {
-			return ""
-		}
+		return RenderBG(p.model,p.lyricStartRow,p.lyricEndRow)
 	}
 
 	var lyricBuilder strings.Builder
 
-	if p.lyricStartRow > p.model.menuBottomRow {
-		lyricBuilder.WriteString(strings.Repeat("\n", p.lyricStartRow-p.model.menuBottomRow))
-	}
-
-	switch p.lyricLines {
-	// 3行歌词
-	case 3:
-		for i := 1; i <= 3; i++ {
-			if p.model.menuStartColumn+3 > 0 {
-				lyricBuilder.WriteString(strings.Repeat(" ", p.model.menuStartColumn+3))
-			}
-			lyricLine := runewidth.Truncate(runewidth.FillRight(p.lyrics[i], p.model.WindowWidth-p.model.menuStartColumn-4), p.model.WindowWidth-p.model.menuStartColumn-4, "")
-			if i == 2 {
-				lyricBuilder.WriteString(SetFgStyle(lyricLine, termenv.ANSIBrightCyan))
-			} else {
-				lyricBuilder.WriteString(SetFgStyle(lyricLine, termenv.ANSIBrightBlack))
-			}
-
-			lyricBuilder.WriteString("\n")
+	for i := 0; i < p.lyricLines; i++ {
+		lyricLine := p.lyrics[i]
+		if i == 2 {
+			lyricBuilder.WriteString(RenderContent(p.model,lyricLine,p.model.menuStartColumn,configs.ThemeConfig.LyricHilightFG,configs.ThemeConfig.AppBackground))
+		}else{
+			lyricBuilder.WriteString(RenderContent(p.model,lyricLine,p.model.menuStartColumn,configs.ThemeConfig.LyricFG,configs.ThemeConfig.AppBackground))
 		}
-	// 5行歌词
-	case 5:
-		for i := 0; i < 5; i++ {
-			if p.model.menuStartColumn+3 > 0 {
-				lyricBuilder.WriteString(strings.Repeat(" ", p.model.menuStartColumn+3))
-			}
-			lyricLine := runewidth.Truncate(
-				runewidth.FillRight(p.lyrics[i], p.model.WindowWidth-p.model.menuStartColumn-4),
-				p.model.WindowWidth-p.model.menuStartColumn-4,
-				"")
-			if i == 2 {
-				lyricBuilder.WriteString(SetFgStyle(lyricLine, termenv.ANSIBrightCyan))
-			} else {
-				lyricBuilder.WriteString(SetFgStyle(lyricLine, termenv.ANSIBrightBlack))
-			}
-			lyricBuilder.WriteString("\n")
-		}
-	}
-
-	if endRow-p.lyricStartRow-p.lyricLines > 0 {
-		lyricBuilder.WriteString(strings.Repeat("\n", endRow-p.lyricStartRow-p.lyricLines))
 	}
 
 	return lyricBuilder.String()
@@ -258,28 +218,23 @@ func (p *Player) songView() string {
 	var bgColor = SongViewBGColor(p)
 	var fgColor = DefaultFGBaseColor()
 
-	if p.model.menuStartColumn-4 > 0 {
-		builder.WriteString(strings.Repeat(" ", p.model.menuStartColumn-4))
-		// builder.WriteString(SetFgStyle("", bgColor))
-		builder.WriteString(SetFgBgStyle(
-			fmt.Sprintf("[%s] ", player.ModeName(p.mode)), 
-			fgColor,
-			bgColor,
-			))
-	}
-	builder.WriteString(SetFgBgStyle(fmt.Sprintf("%d%% ", p.Volume()), fgColor, bgColor))
-	if p.State() == player.Playing {
-		builder.WriteString(SetFgBgStyle("♫ ♪ ♫ ♪  ", fgColor, bgColor))
-	} else {
-		builder.WriteString(SetFgBgStyle("_ z Z Z  ", fgColor, bgColor))
-	}
+	// mode
+	builder.WriteString(fmt.Sprintf("[%s] ", player.ModeName(p.mode)))
 
+	// playing
+	builder.WriteString(fmt.Sprintf("%d%% ", p.Volume()))
+	if p.State() == player.Playing {
+		builder.WriteString("♫ ♪ ♫ ♪  ")
+	} else {
+		builder.WriteString("_ z Z Z  ")
+	}
+	
 	if p.curSongIndex < len(p.playlist) {
 		prefixLen := 22
 		// 按剩余长度截断字符串
 		truncateSong := runewidth.Truncate(p.curSong.Name, p.model.WindowWidth-p.model.menuStartColumn-prefixLen, "") // 多减，避免剩余1个中文字符
-		builder.WriteString(SetFgBgStyle(truncateSong, fgColor, bgColor))
-		builder.WriteString(SetFgBgStyle(" ",fgColor, bgColor))
+		builder.WriteString(truncateSong)
+		builder.WriteString(" ")
 
 		var artists strings.Builder
 		for i, v := range p.curSong.Artists {
@@ -290,15 +245,10 @@ func (p *Player) songView() string {
 			artists.WriteString(v.Name)
 		}
 
-		// 按剩余长度截断字符串
-		remainLen := p.model.WindowWidth + 4 - p.model.menuStartColumn - prefixLen - runewidth.StringWidth(p.curSong.Name)
-		truncateArtists := runewidth.Truncate(
-			runewidth.FillRight(artists.String(), remainLen),
-			remainLen, " ")
-		builder.WriteString(SetFgBgStyle(truncateArtists, fgColor,bgColor))
+		builder.WriteString(artists.String())
 	}
 
-	return builder.String()
+	return RenderContent(p.model, builder.String(),0, fgColor, bgColor)
 }
 
 // progressView 进度条UI
@@ -322,21 +272,21 @@ func (p *Player) progressView() string {
 	fullSize := int(math.Round(width * float64(progress) / 100))
 	var fullCells string
 	for i := 0; i < fullSize && i < len(p.progressRamp); i++ {
-		fullCells += termenv.String(string(configs.ConfigRegistry.ProgressFullChar)).Foreground(termProfile.Color(p.progressRamp[i])).String()
+		fullCells += termenv.String(string(configs.ConfigRegistry.ProgressFullChar)).Background(configs.ThemeConfig.AppBackground).Foreground(termProfile.Color(p.progressRamp[i])).String()
 	}
 
 	emptySize := 0
 	if int(width)-fullSize > 0 {
 		emptySize = int(width) - fullSize
 	}
-	emptyCells := SetFgStyle(strings.Repeat(string(configs.ConfigRegistry.ProgressEmptyChar), emptySize), termenv.ANSIBrightBlack)
+	emptyCells := SetFgBgStyle(strings.Repeat(string(configs.ConfigRegistry.ProgressEmptyChar), emptySize), termenv.ANSIBrightBlack,configs.ThemeConfig.AppBackground)
 
 	if allDuration/60 >= 100 {
-		times := SetFgStyle(fmt.Sprintf("%03d:%02d/%03d:%02d", passedDuration/60, passedDuration%60, allDuration/60, allDuration%60), GetPrimaryColor())
-		return fmt.Sprintf("%s%s %s", fullCells, emptyCells, times)
+		times := SetFgBgStyle(fmt.Sprintf(" %03d:%02d/%03d:%02d", passedDuration/60, passedDuration%60, allDuration/60, allDuration%60), configs.ThemeConfig.TimerFG,configs.ThemeConfig.AppBackground)
+		return fmt.Sprintf("%s%s%s", fullCells, emptyCells, times)
 	} else {
-		times := SetFgStyle(fmt.Sprintf("%02d:%02d/%02d:%02d", passedDuration/60, passedDuration%60, allDuration/60, allDuration%60), GetPrimaryColor())
-		return fmt.Sprintf("%s%s  %s ", fullCells, emptyCells, times)
+		times := SetFgBgStyle(fmt.Sprintf("  %02d:%02d/%02d:%02d", passedDuration/60, passedDuration%60, allDuration/60, allDuration%60), configs.ThemeConfig.TimerFG, configs.ThemeConfig.AppBackground)
+		return fmt.Sprintf("%s%s%s", fullCells, emptyCells, times)
 	}
 
 }

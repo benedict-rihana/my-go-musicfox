@@ -278,7 +278,7 @@ func loginView(m *NeteaseModel) string {
 	}
 
 	// menu title
-	builder.WriteString(m.menuTitleView(m, &top, &MenuItem{Title: "用户登录", Subtitle: "手机号或邮箱"}))
+	builder.WriteString(m.menuTitleView(m, &MenuItem{Title: "用户登录", Subtitle: "手机号或邮箱"}))
 	builder.WriteString("\n\n\n")
 	top += 2
 

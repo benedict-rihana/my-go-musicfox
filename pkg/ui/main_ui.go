@@ -40,9 +40,11 @@ func (item *MenuItem) OriginString() string {
 
 func (item *MenuItem) String() string {
 	if item.Subtitle == "" {
-		return item.Title
+		return SetFgBgStyle(item.Title,configs.ThemeConfig.MenuTitleFG,configs.ThemeConfig.AppBackground)
 	}
-	return item.Title + " " + SetFgStyle(item.Subtitle, termenv.ANSIMagenta)
+	return SetFgBgStyle(item.Title,configs.ThemeConfig.MenuTitleFG,configs.ThemeConfig.AppBackground) + 
+	SetFgBgStyle(" ",configs.ThemeConfig.AppBackground,configs.ThemeConfig.AppBackground) + 
+	SetFgBgStyle(item.Subtitle, configs.ThemeConfig.UserFG,configs.ThemeConfig.AppBackground)
 }
 
 type MainUIModel struct {
@@ -55,6 +57,13 @@ type MainUIModel struct {
 	menuStartRow    int // 菜单开始行
 	menuStartColumn int // 菜单开始列
 	menuBottomRow   int // 菜单最底部所在行
+
+	lyricStartRow int // 歌词所在行
+	lyricEndRow int // 歌词底部所在行
+
+	statusBarRow int // 状态信息栏所在行 
+
+	progressBarRow int // 播放进度条所在行
 
 	menuCurPage  int // 菜单当前页
 	menuPageSize int // 菜单每页大小
@@ -151,20 +160,32 @@ func (main *MainUIModel) update(msg tea.Msg, m *NeteaseModel) (tea.Model, tea.Cm
 		if spaceHeight < 4 {
 			// 不显示歌词
 			m.player.showLyric = false
+			m.lyricStartRow = m.menuBottomRow + 1
+			m.lyricEndRow = m.menuBottomRow + 1
 		} else {
 			m.player.showLyric = true
 
+			m.lyricStartRow = m.menuBottomRow + 2
+			m.player.lyricStartRow = m.menuBottomRow + 2
 			if spaceHeight > 6 {
 				// 5行歌词
-				m.player.lyricStartRow = (m.WindowHeight-3+m.menuBottomRow)/2 - 3
+				// m.player.lyricStartRow = (m.WindowHeight-3+m.menuBottomRow)/2 - 3
 				m.player.lyricLines = 5
 			} else {
 				// 3行歌词
-				m.player.lyricStartRow = (m.WindowHeight-3+m.menuBottomRow)/2 - 2
+				// m.player.lyricStartRow = (m.WindowHeight-3+m.menuBottomRow)/2 - 2
 				m.player.lyricLines = 3
 			}
+			
+			m.lyricEndRow = m.player.lyricStartRow + m.player.lyricLines
+			m.player.lyricEndRow = m.lyricEndRow
 
 		}
+
+		m.statusBarRow = m.lyricEndRow + 2
+		m.player.playStatusBarRow = m.statusBarRow
+		m.progressBarRow = m.statusBarRow + 1
+		m.player.progressBarRow = m.progressBarRow
 	}
 
 	return m, nil
@@ -172,37 +193,45 @@ func (main *MainUIModel) update(msg tea.Msg, m *NeteaseModel) (tea.Model, tea.Cm
 
 // get main ui view
 func (main *MainUIModel) view(m *NeteaseModel) string {
-	if m.WindowWidth <= 0 || m.WindowHeight <= 0 {
+	if m.WindowWidth <= 0 || m.WindowHeight <= 0 { //TODO: should add minimum check for height and width
 		return ""
 	}
-
 	var builder strings.Builder
 
 	// 距离顶部的行数
 	top := 0
-
+	//
 	// title
 	if configs.ConfigRegistry.MainShowTitle {
 		builder.WriteString(main.titleView(m, &top))
-	} else {
-		top++
-	}
+	} 
+
+	top++
+	//builder.WriteString("\n")
+	builder.WriteString(RenderBG(m,top, m.menuTitleStartRow))
+
+	top = m.menuTitleStartRow
 
 	// menu title
-	builder.WriteString(main.menuTitleView(m, &top, nil))
+	builder.WriteString(main.menuTitleView(m, nil))
 
+	builder.WriteString(RenderBG(m,top,m.menuStartRow))
+	top = m.menuStartRow
 	// menu list
 	builder.WriteString(main.menuListView(m, &top))
 
-	// search input
-	builder.WriteString(main.searchInputView(m, &top))
+	top = m.menuBottomRow
+	// search input disable for now
+	//builder.WriteString(main.searchInputView(m, &top))
 
+	builder.WriteString(RenderBG(m,top,m.lyricStartRow))
+	top = m.lyricStartRow
 	// player view
 	builder.WriteString(m.player.playerView(&top))
 
-	if top < m.WindowHeight {
-		builder.WriteString(strings.Repeat("\n", m.WindowHeight-top-1))
-	}
+	top = m.progressBarRow
+	
+	builder.WriteString(RenderBG(m,top,m.WindowHeight))
 
 	return builder.String()
 }
@@ -223,15 +252,14 @@ func (main *MainUIModel) titleView(m *NeteaseModel, top *int) string {
 		titleBuilder.WriteString(strings.Repeat("─", suffixLen))
 	}
 
-	*top++
+	//*top++
 
-	return SetFgStyle(titleBuilder.String(), GetPrimaryColor())
+	return RenderContent(m,titleBuilder.String(),0,configs.ThemeConfig.TitleBarFG,configs.ThemeConfig.AppBackground)
 }
 
 // menu title
-func (main *MainUIModel) menuTitleView(m *NeteaseModel, top *int, menuTitle *MenuItem) string {
+func (main *MainUIModel) menuTitleView(m *NeteaseModel, menuTitle *MenuItem) string {
 	var (
-		menuTitleBuilder strings.Builder
 		title            string
 		maxLen           = m.WindowWidth - m.menuTitleStartColumn
 	)
@@ -241,7 +269,6 @@ func (main *MainUIModel) menuTitleView(m *NeteaseModel, top *int, menuTitle *Men
 	}
 
 	realString := menuTitle.OriginString()
-	formatString := menuTitle.String()
 	if runewidth.StringWidth(realString) > maxLen {
 		var menuTmp = menuTitle
 		titleLen := runewidth.StringWidth(menuTmp.Title)
@@ -254,22 +281,15 @@ func (main *MainUIModel) menuTitleView(m *NeteaseModel, top *int, menuTitle *Men
 		}
 		title = menuTmp.String()
 	} else {
-		formatLen := runewidth.StringWidth(formatString)
-		realLen := runewidth.StringWidth(realString)
-		title = runewidth.FillRight(menuTitle.String(), maxLen+formatLen-realLen)
+		title = menuTitle.String()
 	}
-
-	if m.menuTitleStartRow-*top > 0 {
-		menuTitleBuilder.WriteString(strings.Repeat("\n", m.menuTitleStartRow-*top))
-	}
-	if m.menuTitleStartColumn > 0 {
-		menuTitleBuilder.WriteString(strings.Repeat(" ", m.menuTitleStartColumn))
-	}
-	menuTitleBuilder.WriteString(SetFgStyle(title, termenv.ANSIBrightRed))
-
-	*top = m.menuTitleStartRow
-
-	return menuTitleBuilder.String()
+	// 中文字符的长度在右补全的情况下会出问题
+	termenv.MoveCursor(m.menuTitleStartRow, 0)
+	fmt.Printf("%s",SetFgBgStyle(strings.Repeat(" ",m.WindowWidth), configs.ThemeConfig.AppBackground,configs.ThemeConfig.AppBackground))
+	termenv.MoveCursor(m.menuTitleStartRow, m.menuTitleStartColumn)
+	fmt.Printf("%s",SetFgBgStyle(title,configs.ThemeConfig.MenuTitleFG,configs.ThemeConfig.AppBackground))
+	termenv.MoveCursor(0,0)
+	return RenderContent(m, title, m.menuTitleStartColumn, configs.ThemeConfig.MenuTitleFG,configs.ThemeConfig.AppBackground)
 }
 
 // 菜单列表
@@ -285,26 +305,17 @@ func (main *MainUIModel) menuListView(m *NeteaseModel, top *int) string {
 		maxLines = m.menuPageSize
 	}
 
-	if m.menuStartRow > *top {
-		menuListBuilder.WriteString(strings.Repeat("\n", m.menuStartRow-*top))
-	}
-
 	var str string
 	for i := 0; i < lines; i++ {
 		str = main.menuLineView(m, i)
-		menuListBuilder.WriteString(str)
-		menuListBuilder.WriteString("\n")
+		menuListBuilder.WriteString(RenderContent(m, str, m.menuStartColumn, configs.ThemeConfig.MenuItemFG,configs.ThemeConfig.AppBackground))
 	}
 
 	// 补全空白
 	if maxLines > lines {
-		if m.WindowWidth-m.menuStartColumn > 0 {
-			menuListBuilder.WriteString(strings.Repeat(" ", m.WindowWidth-m.menuStartColumn))
-		}
-		menuListBuilder.WriteString(strings.Repeat("\n", maxLines-lines))
+		menuListBuilder.WriteString(RenderBG(m,0,maxLines - lines))
+		
 	}
-
-	*top = m.menuBottomRow
 
 	return menuListBuilder.String()
 }
@@ -321,23 +332,19 @@ func (main *MainUIModel) menuLineView(m *NeteaseModel, line int) string {
 	if index > len(m.menuList)-1 {
 		index = len(m.menuList) - 1
 	}
-	if m.menuStartColumn > 4 {
-		menuLineBuilder.WriteString(strings.Repeat(" ", m.menuStartColumn-4))
-	}
-	menuItemStr, menuItemLen := main.menuItemView(m, index)
+	// if m.menuStartColumn > 4 {
+	// 	menuLineBuilder.WriteString(strings.Repeat(" ", m.menuStartColumn-4))
+	// }
+	menuItemStr, _ := main.menuItemView(m, index)
 	menuLineBuilder.WriteString(menuItemStr)
 	if m.doubleColumn {
-		var secondMenuItemLen int
+		//var secondMenuItemLen int
 		if index < len(m.menuList)-1 {
 			var secondMenuItemStr string
-			secondMenuItemStr, secondMenuItemLen = main.menuItemView(m, index+1)
+			secondMenuItemStr, _ = main.menuItemView(m, index+1)
 			menuLineBuilder.WriteString(secondMenuItemStr)
 		} else {
 			menuLineBuilder.WriteString("    ")
-			secondMenuItemLen = 4
-		}
-		if m.WindowWidth-menuItemLen-secondMenuItemLen-m.menuStartColumn > 0 {
-			menuLineBuilder.WriteString(strings.Repeat(" ", m.WindowWidth-menuItemLen-secondMenuItemLen-m.menuStartColumn))
 		}
 	}
 
@@ -356,7 +363,7 @@ func (main *MainUIModel) menuItemView(m *NeteaseModel, index int) (string, int) 
 	isSelected := !m.inSearching && index == m.selectedIndex
 
 	if isSelected {
-		menuTitle = fmt.Sprintf(" => %d. %s", index, m.menuList[index].Title)
+		menuTitle = fmt.Sprintf(" %s %d. %s", configs.ThemeConfig.MenuPointer, index, m.menuList[index].Title)
 	} else {
 		menuTitle = fmt.Sprintf("    %d. %s", index, m.menuList[index].Title)
 	}
@@ -364,6 +371,7 @@ func (main *MainUIModel) menuItemView(m *NeteaseModel, index int) (string, int) 
 		menuTitle += " "
 	}
 
+	remainBlanks := 0
 	if m.doubleColumn {
 		if m.WindowWidth <= 88 {
 			itemMaxLen = (m.WindowWidth - m.menuStartColumn - 4) / 2
@@ -378,6 +386,12 @@ func (main *MainUIModel) menuItemView(m *NeteaseModel, index int) (string, int) 
 		itemMaxLen = m.WindowWidth - m.menuStartColumn
 	}
 
+	if itemMaxLen > 44 {
+		remainBlanks = itemMaxLen - 44
+		itemMaxLen = 44
+	}
+
+	spaces := SetFgBgStyle(strings.Repeat(" ", remainBlanks), configs.ThemeConfig.AppBackground,configs.ThemeConfig.AppBackground)
 	menuTitleLen := runewidth.StringWidth(menuTitle)
 	menuSubtitleLen := runewidth.StringWidth(m.menuList[index].Subtitle)
 
@@ -386,24 +400,33 @@ func (main *MainUIModel) menuItemView(m *NeteaseModel, index int) (string, int) 
 		tmp = runewidth.Truncate(menuTitle, itemMaxLen, "")
 		tmp = runewidth.FillRight(tmp, itemMaxLen) // fix: 切割中文后缺少字符导致未对齐
 		if isSelected {
-			menuName = SetFgStyle(tmp, GetPrimaryColor())
+			menuName = SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemSelectedFG,configs.ThemeConfig.MenuItemSelectedBG)
 		} else {
-			menuName = SetNormalStyle(tmp)
+			menuName = SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemFG,configs.ThemeConfig.AppBackground)
 		}
 	} else if menuTitleLen+menuSubtitleLen > itemMaxLen {
 		tmp = runewidth.Truncate(m.menuList[index].Subtitle, itemMaxLen-menuTitleLen, "")
 		tmp = runewidth.FillRight(tmp, itemMaxLen-menuTitleLen)
 		if isSelected {
-			menuName = fmt.Sprintf("%s%s", SetFgStyle(menuTitle, GetPrimaryColor()), SetFgStyle(tmp, termenv.ANSIBrightBlack))
+			menuName = fmt.Sprintf("%s%s%s", 
+			SetFgBgStyle(menuTitle, configs.ThemeConfig.MenuItemSelectedFG,configs.ThemeConfig.MenuItemSelectedBG), 
+			SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemSelectedArtistFG,configs.ThemeConfig.MenuItemSelectedBG),
+		spaces)
 		} else {
-			menuName = fmt.Sprintf("%s%s", SetNormalStyle(menuTitle), SetFgStyle(tmp, termenv.ANSIBrightBlack))
+			menuName = fmt.Sprintf("%s%s%s", 
+			SetFgBgStyle(menuTitle, configs.ThemeConfig.MenuItemFG,configs.ThemeConfig.AppBackground), 
+			SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemArtistFG,configs.ThemeConfig.AppBackground),spaces)
 		}
 	} else {
 		tmp = runewidth.FillRight(m.menuList[index].Subtitle, itemMaxLen-menuTitleLen)
 		if isSelected {
-			menuName = fmt.Sprintf("%s%s", SetFgStyle(menuTitle, GetPrimaryColor()), SetFgStyle(tmp, termenv.ANSIBrightBlack))
+			menuName = fmt.Sprintf("%s%s%s", 
+			SetFgBgStyle(menuTitle, configs.ThemeConfig.MenuItemSelectedFG,configs.ThemeConfig.MenuItemSelectedBG), 
+			SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemSelectedArtistFG,configs.ThemeConfig.MenuItemSelectedBG),spaces)
 		} else {
-			menuName = fmt.Sprintf("%s%s", SetNormalStyle(menuTitle), SetFgStyle(tmp, termenv.ANSIBrightBlack))
+			menuName = fmt.Sprintf("%s%s%s", 
+			SetFgBgStyle(menuTitle, configs.ThemeConfig.MenuItemFG,configs.ThemeConfig.AppBackground), 
+			SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemArtistFG,configs.ThemeConfig.AppBackground),spaces)
 		}
 	}
 

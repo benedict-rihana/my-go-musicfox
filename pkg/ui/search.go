@@ -218,7 +218,7 @@ func (s *SearchModel) view(m *NeteaseModel) string {
 		typeMenu := menuViews[m.selectedIndex]
 		menuTitle.Subtitle = typeMenu.Title
 	}
-	builder.WriteString(m.menuTitleView(m, &top, menuTitle))
+	builder.WriteString(m.menuTitleView(m, menuTitle))
 	builder.WriteString("\n\n\n")
 	top += 2
 
