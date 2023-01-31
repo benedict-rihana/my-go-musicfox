@@ -344,7 +344,10 @@ func (main *MainUIModel) menuLineView(m *NeteaseModel, line int) string {
 			secondMenuItemStr, _ = main.menuItemView(m, index+1)
 			menuLineBuilder.WriteString(secondMenuItemStr)
 		} else {
-			menuLineBuilder.WriteString("    ")
+			menuLineBuilder.WriteString(SetFgBgStyle(
+				strings.Repeat(" ",m.WindowWidth-m.menuStartColumn-44), 
+				configs.ThemeConfig.AppBackground,
+				configs.ThemeConfig.AppBackground))
 		}
 	}
 
