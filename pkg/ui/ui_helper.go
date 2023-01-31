@@ -208,11 +208,11 @@ func GetViewFromDjCate(categories []ds2.DjCategory) []MenuItem {
 
 func SongViewBGColor(p *Player) termenv.Color{
 	switch p.mode{
-	case 2:return termenv.ColorProfile().Color("#a6e3a1") // 顺序
-	case 3:return termenv.ColorProfile().Color("#fab387") // 单曲 
-	case 4:return termenv.ColorProfile().Color("#cba6f7") // 随机
-	case 5:return termenv.ColorProfile().Color("#f38ba8") // 心动
-	default: return termenv.ColorProfile().Color("#89b4fa") // 列表
+	case 2:return configs.ThemeConfig.StatusBarBGList // 顺序
+	case 3:return configs.ThemeConfig.StatusBarBGRepeatOne // 单曲 
+	case 4:return configs.ThemeConfig.StatusBarBGShuffle // 随机
+	case 5:return configs.ThemeConfig.StatusBarBGBeat // 心动
+	default: return configs.ThemeConfig.StatusBarBGRepeatAll // 列表
 	}
 }
 
@@ -242,18 +242,4 @@ func RenderContent(m *NeteaseModel, content string, beginColumn int, fgColor, bg
 	}
 	contentBuilder.WriteString("\n")
 	return contentBuilder.String()
-}
-
-func MenuTitle(m *NeteaseModel) string{
-	return ""
-}
-
-
-func clearScr(m * NeteaseModel){
-	termenv.MoveCursor(0,0)
-	for i := 0; i < m.WindowHeight; i++ {
-	  fmt.Printf("%s",SetFgBgStyle(strings.Repeat(" ",m.WindowWidth), configs.ThemeConfig.AppBackground,configs.ThemeConfig.AppBackground))
-	  termenv.MoveCursor(i + 1,0)
-	}	
-	termenv.MoveCursor(0,0)
 }

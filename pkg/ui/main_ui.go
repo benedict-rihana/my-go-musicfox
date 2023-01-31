@@ -124,7 +124,7 @@ func (main *MainUIModel) update(msg tea.Msg, m *NeteaseModel) (tea.Model, tea.Cm
 	case tickMainUIMsg:
 		return m, nil
 	case tea.WindowSizeMsg:
-		m.doubleColumn = msg.Width >= 75 && configs.ConfigRegistry.MainDoubleColumn
+		m.doubleColumn = msg.Width >= 90 && configs.ConfigRegistry.MainDoubleColumn
 
 		// 菜单开始行、列
 		m.menuStartRow = msg.Height / 3
@@ -132,7 +132,7 @@ func (main *MainUIModel) update(msg tea.Msg, m *NeteaseModel) (tea.Model, tea.Cm
 			m.menuStartRow--
 		}
 		if m.doubleColumn {
-			m.menuStartColumn = (msg.Width - 60) / 2
+			m.menuStartColumn = (msg.Width - 88) / 2
 			m.menuBottomRow = m.menuStartRow + int(math.Ceil(float64(m.menuPageSize)/2)) - 1
 		} else {
 			m.menuStartColumn = (msg.Width - 20) / 2
@@ -410,7 +410,7 @@ func (main *MainUIModel) menuItemView(m *NeteaseModel, index int) (string, int) 
 		if isSelected {
 			menuName = fmt.Sprintf("%s%s%s", 
 			SetFgBgStyle(menuTitle, configs.ThemeConfig.MenuItemSelectedFG,configs.ThemeConfig.MenuItemSelectedBG), 
-			SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemSelectedArtistFG,configs.ThemeConfig.MenuItemSelectedBG),
+			SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemArtistSelectedFG,configs.ThemeConfig.MenuItemSelectedBG),
 		spaces)
 		} else {
 			menuName = fmt.Sprintf("%s%s%s", 
@@ -422,7 +422,7 @@ func (main *MainUIModel) menuItemView(m *NeteaseModel, index int) (string, int) 
 		if isSelected {
 			menuName = fmt.Sprintf("%s%s%s", 
 			SetFgBgStyle(menuTitle, configs.ThemeConfig.MenuItemSelectedFG,configs.ThemeConfig.MenuItemSelectedBG), 
-			SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemSelectedArtistFG,configs.ThemeConfig.MenuItemSelectedBG),spaces)
+			SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemArtistSelectedFG,configs.ThemeConfig.MenuItemSelectedBG),spaces)
 		} else {
 			menuName = fmt.Sprintf("%s%s%s", 
 			SetFgBgStyle(menuTitle, configs.ThemeConfig.MenuItemFG,configs.ThemeConfig.AppBackground), 

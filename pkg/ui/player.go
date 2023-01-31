@@ -224,19 +224,20 @@ func (p *Player) songView() string {
 	// playing
 	builder.WriteString(fmt.Sprintf("%d%% ", p.Volume()))
 	if p.State() == player.Playing {
-		builder.WriteString("♫ ♪ ♫ ♪  ")
+		builder.WriteString("ﱘ ")
 	} else {
-		builder.WriteString("_ z Z Z  ")
+		builder.WriteString("ﱙ ")
 	}
 	
 	if p.curSongIndex < len(p.playlist) {
-		prefixLen := 22
+		//prefixLen := 32
 		// 按剩余长度截断字符串
-		truncateSong := runewidth.Truncate(p.curSong.Name, p.model.WindowWidth-p.model.menuStartColumn-prefixLen, "") // 多减，避免剩余1个中文字符
-		builder.WriteString(truncateSong)
+		//truncateSong := runewidth.Truncate(p.curSong.Name, p.model.WindowWidth - prefixLen, "") // 多减，避免剩余1个中文字符
+		builder.WriteString(p.curSong.Name)
 		builder.WriteString(" ")
 
 		var artists strings.Builder
+
 		for i, v := range p.curSong.Artists {
 			if i != 0 {
 				artists.WriteString(",")
@@ -248,7 +249,7 @@ func (p *Player) songView() string {
 		builder.WriteString(artists.String())
 	}
 
-	return RenderContent(p.model, builder.String(),0, fgColor, bgColor)
+	return RenderContent(p.model, runewidth.Truncate(builder.String(), p.model.WindowWidth,""),0, fgColor, bgColor)
 }
 
 // progressView 进度条UI

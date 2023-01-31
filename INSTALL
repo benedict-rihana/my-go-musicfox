@@ -2,4 +2,5 @@
 
 go build cmd/musicfox.go
 
-cp musicfox ~/.local/bin/
+cp musicfox ~/.local/bin/nmtui
+
