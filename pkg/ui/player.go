@@ -202,7 +202,7 @@ func (p *Player) lyricView() string {
 	for i := 0; i < p.lyricLines; i++ {
 		lyricLine := p.lyrics[i]
 		if i == 2 {
-			lyricBuilder.WriteString(RenderContent(p.model,lyricLine,p.model.menuStartColumn,configs.ThemeConfig.LyricHilightFG,configs.ThemeConfig.AppBackground))
+			lyricBuilder.WriteString(RenderContent(p.model,lyricLine,p.model.menuStartColumn,configs.ThemeConfig.LyricHilightFG,configs.ThemeConfig.LyricHilightBG))
 		}else{
 			lyricBuilder.WriteString(RenderContent(p.model,lyricLine,p.model.menuStartColumn,configs.ThemeConfig.LyricFG,configs.ThemeConfig.AppBackground))
 		}

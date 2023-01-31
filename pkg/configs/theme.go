@@ -27,6 +27,7 @@ type Theme struct{
 	TextFG termenv.Color
 	LyricFG termenv.Color
 	LyricHilightFG termenv.Color
+	LyricHilightBG termenv.Color
 	MenuPointer string
 }
 
@@ -52,6 +53,7 @@ func initBackground(theme *Theme){
 	theme.StatusBarBGList = initColor("background.list", theme.StatusBarBGList)
 	theme.StatusBarBGShuffle = initColor("background.shuffle", theme.StatusBarBGShuffle)
 	theme.MenuItemSelectedBG = initColor("background.itemselected",theme.MenuItemSelectedBG)
+	theme.LyricHilightBG = initColor("background.lyrichighlight",theme.LyricHilightBG)
 }
 
 func initColor(config string,defVal termenv.Color) termenv.Color{
@@ -101,6 +103,7 @@ func initDefaultConfig() *Theme{
 		StatusBarBGBeat: termenv.ANSIRed,
 		LyricFG: termenv.ANSIBrightCyan,
 		LyricHilightFG: termenv.ANSIBrightYellow,
+		LyricHilightBG: termenv.ANSIBrightBlack,
 		MenuPointer: "=>",
  		TextFG: termenv.ColorProfile().Color("#1e1e1e"),
 	}
