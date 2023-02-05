@@ -402,7 +402,7 @@ func (main *MainUIModel) menuItemView(m *NeteaseModel, index int) (string, int) 
 	var tmp string
 	if menuTitleLen > itemMaxLen {
 		tmp = runewidth.Truncate(menuTitle, itemMaxLen, "")
-		//tmp = runewidth.FillRight(tmp, itemMaxLen) // fix: 切割中文后缺少字符导致未对齐
+		tmp = runewidth.FillRight(tmp, itemMaxLen) // fix: 切割中文后缺少字符导致未对齐
 		if isSelected {
 			menuName = fmt.Sprintf("%s%s",
 			SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemSelectedFG,configs.ThemeConfig.MenuItemSelectedBG),
@@ -413,7 +413,7 @@ func (main *MainUIModel) menuItemView(m *NeteaseModel, index int) (string, int) 
 		}
 	} else if menuTitleLen+menuSubtitleLen > itemMaxLen {
 		tmp = runewidth.Truncate(m.menuList[index].Subtitle, itemMaxLen-menuTitleLen, "")
-		//tmp = runewidth.FillRight(tmp, itemMaxLen-menuTitleLen)
+		tmp = runewidth.FillRight(tmp, itemMaxLen-menuTitleLen)
 		if isSelected {
 			menuName = fmt.Sprintf("%s%s%s", 
 			SetFgBgStyle(menuTitle, configs.ThemeConfig.MenuItemSelectedFG,configs.ThemeConfig.MenuItemSelectedBG), 
