@@ -261,7 +261,7 @@ func (p *Player) progressView() string {
 	passedDuration := int(p.PassedTime().Seconds())
 	progress := passedDuration * 100 / allDuration
 
-	width := float64(p.model.WindowWidth - 14)
+	width := float64(p.model.WindowWidth - 13)
 	if progressStartColor == "" || progressEndColor == "" || len(p.progressRamp) == 0 {
 		progressStartColor, progressEndColor = GetRandomRgbColor(true)
 	}
@@ -284,10 +284,10 @@ func (p *Player) progressView() string {
 
 	if allDuration/60 >= 100 {
 		times := SetFgBgStyle(fmt.Sprintf(" %03d:%02d/%03d:%02d", passedDuration/60, passedDuration%60, allDuration/60, allDuration%60), configs.ThemeConfig.TimerFG,configs.ThemeConfig.AppBackground)
-		return fmt.Sprintf("%s%s%s", fullCells, emptyCells, times)
+		return fmt.Sprintf("%s%s%s\n", fullCells, emptyCells, times)
 	} else {
 		times := SetFgBgStyle(fmt.Sprintf("  %02d:%02d/%02d:%02d", passedDuration/60, passedDuration%60, allDuration/60, allDuration%60), configs.ThemeConfig.TimerFG, configs.ThemeConfig.AppBackground)
-		return fmt.Sprintf("%s%s%s", fullCells, emptyCells, times)
+		return fmt.Sprintf("%s%s%s\n", fullCells, emptyCells, times)
 	}
 
 }

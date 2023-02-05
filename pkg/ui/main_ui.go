@@ -233,6 +233,7 @@ func (main *MainUIModel) view(m *NeteaseModel) string {
 	
 	builder.WriteString(RenderBG(m,top,m.WindowHeight))
 
+	termenv.MoveCursor(0,0)
 	return builder.String()
 }
 
@@ -288,8 +289,8 @@ func (main *MainUIModel) menuTitleView(m *NeteaseModel, menuTitle *MenuItem) str
 	fmt.Printf("%s",SetFgBgStyle(strings.Repeat(" ",m.WindowWidth), configs.ThemeConfig.AppBackground,configs.ThemeConfig.AppBackground))
 	termenv.MoveCursor(m.menuTitleStartRow, m.menuTitleStartColumn)
 	fmt.Printf("%s",SetFgBgStyle(title,configs.ThemeConfig.MenuTitleFG,configs.ThemeConfig.AppBackground))
-	termenv.MoveCursor(0,0)
-	return RenderContent(m, title, m.menuTitleStartColumn, configs.ThemeConfig.MenuTitleFG,configs.ThemeConfig.AppBackground)
+	//termenv.MoveCursor(0,0)
+	return RenderContent(m, "", m.menuTitleStartColumn, configs.ThemeConfig.MenuTitleFG,configs.ThemeConfig.AppBackground)
 }
 
 // 菜单列表
@@ -390,7 +391,7 @@ func (main *MainUIModel) menuItemView(m *NeteaseModel, index int) (string, int) 
 	}
 
 	if itemMaxLen > 44 {
-		remainBlanks = itemMaxLen - 44
+		remainBlanks = m.WindowWidth - m.menuStartColumn - 88
 		itemMaxLen = 44
 	}
 
@@ -401,15 +402,18 @@ func (main *MainUIModel) menuItemView(m *NeteaseModel, index int) (string, int) 
 	var tmp string
 	if menuTitleLen > itemMaxLen {
 		tmp = runewidth.Truncate(menuTitle, itemMaxLen, "")
-		tmp = runewidth.FillRight(tmp, itemMaxLen) // fix: 切割中文后缺少字符导致未对齐
+		//tmp = runewidth.FillRight(tmp, itemMaxLen) // fix: 切割中文后缺少字符导致未对齐
 		if isSelected {
-			menuName = SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemSelectedFG,configs.ThemeConfig.MenuItemSelectedBG)
+			menuName = fmt.Sprintf("%s%s",
+			SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemSelectedFG,configs.ThemeConfig.MenuItemSelectedBG),
+			spaces)
 		} else {
-			menuName = SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemFG,configs.ThemeConfig.AppBackground)
+			menuName = fmt.Sprintf("%s%s",
+			SetFgBgStyle(tmp, configs.ThemeConfig.MenuItemFG,configs.ThemeConfig.AppBackground),spaces)
 		}
 	} else if menuTitleLen+menuSubtitleLen > itemMaxLen {
 		tmp = runewidth.Truncate(m.menuList[index].Subtitle, itemMaxLen-menuTitleLen, "")
-		tmp = runewidth.FillRight(tmp, itemMaxLen-menuTitleLen)
+		//tmp = runewidth.FillRight(tmp, itemMaxLen-menuTitleLen)
 		if isSelected {
 			menuName = fmt.Sprintf("%s%s%s", 
 			SetFgBgStyle(menuTitle, configs.ThemeConfig.MenuItemSelectedFG,configs.ThemeConfig.MenuItemSelectedBG), 
