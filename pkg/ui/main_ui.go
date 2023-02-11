@@ -314,7 +314,7 @@ func (main *MainUIModel) menuListView(m *NeteaseModel, top *int) string {
 
 	// 补全空白
 	if maxLines > lines {
-		menuListBuilder.WriteString(RenderBG(m,0,maxLines - lines))
+		menuListBuilder.WriteString(RenderBG(m,0,maxLines - lines + 1))
 		
 	}
 
